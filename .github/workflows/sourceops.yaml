@@ -14,7 +14,44 @@ on:
     - cron: '15 */19 * * *'
   workflow_dispatch:
 
+env:
+  PLATFORMSH_CLI_TOKEN: ${{ secrets.PSH_TOKEN }}
+
 jobs:
-  run-reusable-sop-update:
-    uses: platformsh-templates/ghrw-templates/.github/workflows/sourceops.yaml@main
-    secrets: inherit
+  run_dm_update:
+    name: Trigger Source Op
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'gilzow' }}
+    steps:
+      - name: 'Setup Python'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: "Install PSH CLI tool"
+        shell: bash
+        run: |
+          curl -fsS https://platform.sh/cli/installer | php
+          # for some reason, sourcing our .bashrc file does not successfully prepend our path to PATH
+          # export PATH="${HOME}/.platformsh/bin:${PATH}"
+          echo "PATH=${HOME}/.platformsh/bin:${PATH}" >> $GITHUB_ENV
+
+      - name: 'Checkout the repo'
+        uses: actions/checkout@v3
+
+      - name: 'Get project ID'
+        uses: platformsh/gha-retrieve-projectid@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Run SourceOp Tools'
+        shell: bash
+        run: |
+          if [[ "${PATH}" != *".platformsh"* ]]; then
+            echo "psh installer not in PATH"
+            export PATH="${HOME}/.platformsh/bin:${PATH}"
+          fi
+          
+          printf "Beginning Source Operations toolkit install...\n"
+    
+          curl -fsS https://raw.githubusercontent.com/gilzow/source-operations-js/main/setup.sh | { bash /dev/fd/3 trigger-sopupdate; } 3<&0
