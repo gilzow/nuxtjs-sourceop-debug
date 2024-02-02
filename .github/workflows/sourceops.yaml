@@ -42,7 +42,7 @@ jobs:
       - name: 'Get project ID'
         uses: platformsh/gha-retrieve-projectid@main
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_TOKEN }}
 
       - name: 'Run SourceOp Tools'
         shell: bash
